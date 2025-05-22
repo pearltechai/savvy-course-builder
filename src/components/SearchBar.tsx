@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -39,7 +40,12 @@ const SearchBar = ({ onSearch, isLoading = false }: SearchBarProps) => {
           className="bg-education-primary hover:bg-blue-600 text-white"
           disabled={isLoading}
         >
-          {isLoading ? 'Generating...' : 'Generate Course'}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : 'Generate Course'}
         </Button>
       </form>
     </div>

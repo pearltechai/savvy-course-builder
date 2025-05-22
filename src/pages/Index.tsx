@@ -5,74 +5,97 @@ import { toast } from 'sonner';
 import Hero from '@/components/Hero';
 import SearchBar from '@/components/SearchBar';
 import SampleTopics from '@/components/SampleTopics';
-import CourseCard from '@/components/CourseCard';
-import { generateMockCourse } from '@/utils/mockData';
 import { CourseStructure } from '@/components/CourseOutline';
+import { generateMockCourse } from '@/utils/mockData';
+import ApiKeyModal from '@/components/ApiKeyModal';
+import { Button } from '@/components/ui/button';
+import { Settings2 } from 'lucide-react';
+import { generateCourseContent } from '@/services/openaiService';
 
 const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [recentCourses, setRecentCourses] = useState<CourseStructure[]>([]);
-
-  const handleSearch = (query: string) => {
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  
+  const handleSearch = async (topic: string) => {
     setIsLoading(true);
     
-    // Simulate API call with a timeout
-    setTimeout(() => {
-      try {
-        const newCourse = generateMockCourse(query);
-        
-        // Add the new course to recent courses
-        setRecentCourses(prev => [newCourse, ...prev.slice(0, 3)]);
-        
-        // Navigate to the course page
-        navigate(`/course/${newCourse.id}`, { state: { course: newCourse } });
-        
-        toast.success(`Course on "${query}" generated successfully!`);
-      } catch (error) {
-        console.error('Error generating course:', error);
-        toast.error('Failed to generate course. Please try again.');
-      } finally {
-        setIsLoading(false);
+    try {
+      let course: CourseStructure | null = null;
+      const apiKey = localStorage.getItem('openai_api_key');
+      
+      if (apiKey) {
+        // Try to generate content with OpenAI
+        try {
+          const aiResponse = await generateCourseContent(topic);
+          if (aiResponse) {
+            // Map the API response to our CourseStructure format
+            course = {
+              id: `course-${Date.now()}`,
+              title: aiResponse.title || topic,
+              description: aiResponse.description || `A comprehensive course about ${topic}`,
+              subtopics: aiResponse.subtopics.map((subtopic, index) => ({
+                id: `subtopic-${Date.now()}-${index + 1}`,
+                title: subtopic.title,
+                description: subtopic.description,
+                content: subtopic.content
+              }))
+            };
+          }
+        } catch (error: any) {
+          console.error('Failed to generate content with OpenAI:', error);
+          toast.error(`OpenAI API error: ${error.message || 'Unknown error'}`);
+          // Fall back to mock data
+          course = generateMockCourse(topic);
+        }
+      } else {
+        // No API key, use mock data
+        course = generateMockCourse(topic);
       }
-    }, 1500);
+
+      if (course) {
+        navigate(`/course/${course.id}`, { state: { course } });
+      } else {
+        toast.error('Failed to generate course content');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSampleTopicSelect = (topic: string) => {
+    handleSearch(topic);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <Hero />
-
-      {/* Search Section */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-8">
-            What would you like to learn today?
-          </h2>
-          
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-          
-          <SampleTopics onTopicSelect={handleSearch} />
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="flex justify-end mb-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setIsApiKeyModalOpen(true)}
+            title="OpenAI API Settings"
+          >
+            <Settings2 className="h-5 w-5" />
+          </Button>
         </div>
-
-        {/* Recent Courses Section */}
-        {recentCourses.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">Your Recent Courses</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentCourses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  id={course.id}
-                  title={course.title}
-                  description={course.description}
-                  subtopicsCount={course.subtopics.length}
-                  onClick={() => navigate(`/course/${course.id}`, { state: { course } })}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        
+        <Hero />
+        
+        <div className="mt-12 mb-16">
+          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+        </div>
+        
+        <SampleTopics onSelectTopic={handleSampleTopicSelect} />
+        
+        <ApiKeyModal 
+          isOpen={isApiKeyModalOpen} 
+          onClose={() => setIsApiKeyModalOpen(false)} 
+        />
       </div>
     </div>
   );
