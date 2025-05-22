@@ -3,10 +3,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 
 interface SampleTopicsProps {
-  onTopicSelect: (topic: string) => void;
+  onSelectTopic: (topic: string) => void;
 }
 
-const SampleTopics: React.FC<SampleTopicsProps> = ({ onTopicSelect }) => {
+const SampleTopics: React.FC<SampleTopicsProps> = ({ onSelectTopic }) => {
   const sampleTopics = [
     "Machine Learning",
     "Ancient Rome",
@@ -26,7 +26,7 @@ const SampleTopics: React.FC<SampleTopicsProps> = ({ onTopicSelect }) => {
           <Button
             key={topic}
             variant="outline"
-            onClick={() => onTopicSelect(topic)}
+            onClick={() => onSelectTopic(topic)}
             className="bg-transparent hover:bg-gray-100 text-education-primary border border-education-primary hover:border-education-primary"
           >
             {topic}
