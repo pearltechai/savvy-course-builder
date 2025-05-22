@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SubTopic } from './CourseOutline';
-import { BookOpen, Quiz } from 'lucide-react';
+import { BookOpen, FileText } from 'lucide-react';
 import QuizModal from './QuizModal';
 import { useState } from 'react';
 
@@ -46,7 +46,7 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
             onClick={() => setQuizOpen(true)}
             className="bg-education-primary hover:bg-blue-600"
           >
-            <Quiz className="mr-2" />
+            <FileText className="mr-2" />
             Take a Quiz on This Topic
           </Button>
         </div>
