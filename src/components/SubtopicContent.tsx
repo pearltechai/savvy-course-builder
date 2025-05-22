@@ -7,6 +7,7 @@ import { SubTopic } from './CourseOutline';
 import { BookOpen, FileText } from 'lucide-react';
 import QuizModal from './QuizModal';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface SubtopicContentProps {
   subtopic: SubTopic;
@@ -25,8 +26,10 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
   isPreviousDisabled,
   isNextDisabled,
 }) => {
-  const contentParagraphs = subtopic.content.split('\n').filter(line => line.trim() !== '');
   const [quizOpen, setQuizOpen] = useState(false);
+
+  // Process content to identify code blocks and regular paragraphs
+  const processedContent = processContent(subtopic.content);
 
   return (
     <Card className="w-full">
@@ -36,8 +39,16 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
       </CardHeader>
       <CardContent>
         <div className="prose max-w-none">
-          {contentParagraphs.map((paragraph, index) => (
-            <p key={index} className="mb-4">{paragraph}</p>
+          {processedContent.map((block, index) => (
+            <div key={index} className="mb-6">
+              {block.type === 'code' ? (
+                <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 overflow-x-auto font-mono text-sm">
+                  <pre className="whitespace-pre-wrap">{block.content}</pre>
+                </div>
+              ) : (
+                <p className="leading-7 text-gray-700 dark:text-gray-300">{block.content}</p>
+              )}
+            </div>
           ))}
         </div>
         
@@ -64,7 +75,10 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
           <Button
             onClick={onNext}
             disabled={isNextDisabled}
-            className="bg-education-primary hover:bg-blue-600"
+            className={cn(
+              "bg-education-primary hover:bg-blue-600",
+              isNextDisabled && "opacity-50 pointer-events-none"
+            )}
           >
             <BookOpen className="mr-2" />
             Next
@@ -80,6 +94,30 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
       </CardContent>
     </Card>
   );
+};
+
+// Helper function to process content and identify code blocks
+const processContent = (content: string): Array<{type: 'text' | 'code', content: string}> => {
+  const blocks: Array<{type: 'text' | 'code', content: string}> = [];
+  
+  // Split content by code block markers (```), commonly used in markdown
+  const parts = content.split(/```([^`]+)```/);
+  
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i].trim() === '') continue;
+    
+    // Even indices are regular text, odd indices are code blocks
+    if (i % 2 === 0) {
+      // Process regular text paragraphs
+      const paragraphs = parts[i].split('\n').filter(p => p.trim().length > 0);
+      paragraphs.forEach(p => blocks.push({ type: 'text', content: p.trim() }));
+    } else {
+      // This is a code block
+      blocks.push({ type: 'code', content: parts[i].trim() });
+    }
+  }
+  
+  return blocks;
 };
 
 export default SubtopicContent;
