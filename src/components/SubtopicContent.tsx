@@ -7,7 +7,7 @@ import { SubTopic } from './CourseOutline';
 import { BookOpen, FileText } from 'lucide-react';
 import QuizModal from './QuizModal';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, extractCodeBlocks } from '@/lib/utils';
 
 interface SubtopicContentProps {
   subtopic: SubTopic;

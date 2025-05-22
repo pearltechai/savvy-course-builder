@@ -48,8 +48,9 @@ export const generateCourseContent = async (topic: string): Promise<CourseGenera
         ]
       }
       
-      Generate 4-5 logical subtopics that would make sense for this subject.
+      Generate 8-10 logical subtopics that would make sense for this subject.
       Ensure content is educational, accurate, and comprehensive.
+      Make sure to include code examples with \`\`\` code blocks where appropriate, especially for technical topics.
     `;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
