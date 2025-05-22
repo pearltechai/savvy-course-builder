@@ -1,4 +1,3 @@
-
 // OpenAI service for generating course content using the OpenAI API
 
 interface OpenAICompletionResponse {
@@ -18,6 +17,12 @@ interface CourseGenerationResponse {
     description: string;
     content: string;
   }>;
+}
+
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number;
 }
 
 export const generateCourseContent = async (topic: string): Promise<CourseGenerationResponse | null> => {
@@ -191,5 +196,95 @@ export const generateSuggestedQuestions = async (subtopicTitle: string, subtopic
       'What are common misconceptions about this subject?',
       'How has this field evolved over time?'
     ];
+  }
+};
+
+export const generateQuizQuestions = async (subtopicTitle: string, subtopicContent: string): Promise<QuizQuestion[]> => {
+  const apiKey = localStorage.getItem('openai_api_key');
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key is missing');
+  }
+
+  try {
+    const prompt = `
+      Based on the following subtopic in a course:
+      
+      Title: ${subtopicTitle}
+      Content: ${subtopicContent.substring(0, 1500)}
+      
+      Generate 3 multiple-choice quiz questions about this topic. Each question should have 4 options with exactly one correct answer.
+      
+      Return the questions in JSON format as an array of objects with the following structure:
+      [
+        {
+          "question": "Question text",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correctAnswer": 0 // Index of the correct answer (0-3)
+        }
+      ]
+      
+      Ensure questions test understanding rather than direct quotes. Make the incorrect options plausible.
+    `;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an educational assistant that creates quiz questions. Respond only with the requested JSON structure.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('OpenAI API error:', data.error);
+      throw new Error(`API Error: ${data.error.message || data.error}`);
+    }
+
+    const contentStr = data.choices[0]?.message?.content;
+    if (!contentStr) {
+      throw new Error('Unexpected API response format');
+    }
+
+    // Extract the JSON array from the response
+    const jsonMatch = contentStr.match(/```json\s*(\[[\s\S]*\])\s*```/) || 
+                     contentStr.match(/(\[[\s\S]*\])/);
+    
+    const jsonStr = jsonMatch ? jsonMatch[1] : contentStr;
+    
+    try {
+      const parsedQuestions = JSON.parse(jsonStr.trim());
+      if (Array.isArray(parsedQuestions) && parsedQuestions.every(
+        q => q.question && Array.isArray(q.options) && 
+        typeof q.correctAnswer === 'number' && 
+        q.options.length > 0
+      )) {
+        return parsedQuestions;
+      } else {
+        throw new Error('Invalid question format');
+      }
+    } catch (e) {
+      console.error('Failed to parse JSON from API response:', contentStr);
+      throw new Error('Failed to parse quiz questions from API response');
+    }
+  } catch (error) {
+    console.error('Error generating quiz questions:', error);
+    throw error;
   }
 };

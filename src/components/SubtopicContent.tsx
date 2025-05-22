@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SubTopic } from './CourseOutline';
+import { BookOpen, Quiz } from 'lucide-react';
+import QuizModal from './QuizModal';
+import { useState } from 'react';
 
 interface SubtopicContentProps {
   subtopic: SubTopic;
@@ -23,6 +26,7 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
   isNextDisabled,
 }) => {
   const contentParagraphs = subtopic.content.split('\n').filter(line => line.trim() !== '');
+  const [quizOpen, setQuizOpen] = useState(false);
 
   return (
     <Card className="w-full">
@@ -35,6 +39,16 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
           {contentParagraphs.map((paragraph, index) => (
             <p key={index} className="mb-4">{paragraph}</p>
           ))}
+        </div>
+        
+        <div className="flex justify-center my-6">
+          <Button 
+            onClick={() => setQuizOpen(true)}
+            className="bg-education-primary hover:bg-blue-600"
+          >
+            <Quiz className="mr-2" />
+            Take a Quiz on This Topic
+          </Button>
         </div>
         
         <Separator className="my-8" />
@@ -52,9 +66,17 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
             disabled={isNextDisabled}
             className="bg-education-primary hover:bg-blue-600"
           >
+            <BookOpen className="mr-2" />
             Next
           </Button>
         </div>
+        
+        {/* Quiz Modal */}
+        <QuizModal 
+          isOpen={quizOpen} 
+          onClose={() => setQuizOpen(false)} 
+          subtopic={subtopic}
+        />
       </CardContent>
     </Card>
   );
