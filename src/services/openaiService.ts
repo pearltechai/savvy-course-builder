@@ -64,7 +64,7 @@ export const generateCourseContent = async (topic: string): Promise<CourseGenera
         messages: [
           {
             role: 'system',
-            content: 'You are an educational content creator specializing in creating structured courses on various topics. Respond only with the requested JSON structure.'
+            content: 'You are an educational content creator specializing in creating structured courses on various topics. Respond only with valid JSON in the exact format requested. Do not include any markdown formatting, code blocks, or additional text outside the JSON structure.'
           },
           {
             role: 'user',
@@ -88,18 +88,49 @@ export const generateCourseContent = async (topic: string): Promise<CourseGenera
       throw new Error('Unexpected API response format');
     }
 
-    // Extract the JSON string from the response
-    // Sometimes GPT adds markdown code blocks or extra text
-    const jsonMatch = contentStr.match(/```json\s*(\{[\s\S]*\})\s*```/) || 
-                     contentStr.match(/(\{[\s\S]*\})/);
+    console.log('Raw API response:', contentStr);
+
+    // Clean the response string - remove any markdown formatting
+    let cleanedContent = contentStr.trim();
     
-    const jsonStr = jsonMatch ? jsonMatch[1] : contentStr;
+    // Remove markdown code blocks if present
+    cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+    
+    // Remove any leading/trailing whitespace or newlines
+    cleanedContent = cleanedContent.trim();
+    
+    // Find the JSON object - look for the first { and last }
+    const firstBrace = cleanedContent.indexOf('{');
+    const lastBrace = cleanedContent.lastIndexOf('}');
+    
+    if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+      console.error('No valid JSON found in response:', cleanedContent);
+      throw new Error('No valid JSON found in API response');
+    }
+    
+    const jsonStr = cleanedContent.substring(firstBrace, lastBrace + 1);
     
     try {
-      const parsedResponse = JSON.parse(jsonStr.trim());
+      const parsedResponse = JSON.parse(jsonStr);
+      
+      // Validate the response structure
+      if (!parsedResponse.title || !parsedResponse.description || !Array.isArray(parsedResponse.subtopics)) {
+        console.error('Invalid response structure:', parsedResponse);
+        throw new Error('Invalid course structure in API response');
+      }
+      
+      // Validate subtopics
+      for (const subtopic of parsedResponse.subtopics) {
+        if (!subtopic.title || !subtopic.description || !subtopic.content) {
+          console.error('Invalid subtopic structure:', subtopic);
+          throw new Error('Invalid subtopic structure in API response');
+        }
+      }
+      
       return parsedResponse;
-    } catch (e) {
-      console.error('Failed to parse JSON from API response:', contentStr);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', jsonStr);
+      console.error('Parse error:', parseError);
       throw new Error('Failed to parse content from API response');
     }
   } catch (error) {
