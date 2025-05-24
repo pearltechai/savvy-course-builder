@@ -50,12 +50,7 @@ const CourseOutline: React.FC<CourseOutlineProps> = ({
                 }`}
                 onClick={() => onSubtopicSelect(subtopic)}
               >
-                <div>
-                  <div className="font-medium">{index + 1}. {subtopic.title}</div>
-                  <div className="text-sm text-muted-foreground line-clamp-1">
-                    {subtopic.description}
-                  </div>
-                </div>
+                <div className="font-medium">{index + 1}. {subtopic.title}</div>
               </Button>
             </div>
           ))}
