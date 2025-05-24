@@ -32,43 +32,48 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
   const processedContent = processContent(subtopic.content);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="text-sm text-muted-foreground">{courseTitle}</div>
-        <CardTitle className="text-2xl font-bold">{subtopic.title}</CardTitle>
+    <Card className="w-full border-0 shadow-sm bg-white/80 backdrop-blur-sm">
+      <CardHeader className="pb-6">
+        <div className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
+          {courseTitle}
+        </div>
+        <CardTitle className="text-2xl font-semibold text-gray-900 leading-tight">
+          {subtopic.title}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="prose max-w-none">
+      <CardContent className="pt-0">
+        <div className="prose prose-gray max-w-none">
           {processedContent.map((block, index) => (
             <div key={index} className="mb-6">
               {block.type === 'code' ? (
-                <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 overflow-x-auto font-mono text-sm">
-                  <pre className="whitespace-pre-wrap">{block.content}</pre>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 overflow-x-auto font-mono text-sm">
+                  <pre className="whitespace-pre-wrap text-gray-800">{block.content}</pre>
                 </div>
               ) : (
-                <p className="leading-7 text-gray-700 dark:text-gray-300">{block.content}</p>
+                <p className="text-gray-700 leading-7 text-base mb-4">{block.content}</p>
               )}
             </div>
           ))}
         </div>
         
-        <div className="flex justify-center my-6">
+        <div className="flex justify-center my-8">
           <Button 
             onClick={() => setQuizOpen(true)}
-            className="bg-education-primary hover:bg-blue-600"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200"
           >
-            <FileText className="mr-2" />
+            <FileText className="mr-2 h-4 w-4" />
             Take a Quiz on This Topic
           </Button>
         </div>
         
-        <Separator className="my-8" />
+        <Separator className="my-8 bg-gray-200" />
         
-        <div className="flex justify-between mt-4">
+        <div className="flex justify-between mt-6">
           <Button
             variant="outline"
             onClick={onPrevious}
             disabled={isPreviousDisabled}
+            className="px-6 py-2.5 rounded-lg font-medium border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
           >
             Previous
           </Button>
@@ -76,11 +81,11 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
             onClick={onNext}
             disabled={isNextDisabled}
             className={cn(
-              "bg-education-primary hover:bg-blue-600",
+              "bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200",
               isNextDisabled && "opacity-50 pointer-events-none"
             )}
           >
-            <BookOpen className="mr-2" />
+            <BookOpen className="mr-2 h-4 w-4" />
             Next
           </Button>
         </div>

@@ -30,27 +30,32 @@ const CourseOutline: React.FC<CourseOutlineProps> = ({
   selectedSubtopicId
 }) => {
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">{course.title}</CardTitle>
-        <CardDescription className="text-base">{course.description}</CardDescription>
+    <Card className="w-full border-0 shadow-sm bg-white/80 backdrop-blur-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl font-semibold text-gray-900 leading-tight">
+          {course.title}
+        </CardTitle>
+        <CardDescription className="text-sm text-gray-600 leading-relaxed mt-2">
+          {course.description}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <h3 className="text-lg font-medium mb-4">Course Outline</h3>
-        <div className="space-y-2">
+      <CardContent className="pt-0">
+        <h3 className="text-base font-medium text-gray-800 mb-3">Course Outline</h3>
+        <div className="space-y-1">
           {course.subtopics.map((subtopic, index) => (
             <div key={subtopic.id}>
-              {index > 0 && <Separator className="my-2" />}
               <Button
                 variant="ghost"
-                className={`w-full justify-start text-left font-normal h-auto py-2 ${
+                className={`w-full justify-start text-left font-normal h-auto py-3 px-3 rounded-lg transition-all duration-200 hover:bg-gray-50 ${
                   selectedSubtopicId === subtopic.id
-                    ? 'bg-blue-50 text-education-primary font-medium'
-                    : ''
+                    ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200'
+                    : 'text-gray-700 hover:text-gray-900'
                 }`}
                 onClick={() => onSubtopicSelect(subtopic)}
               >
-                <div className="font-medium">{index + 1}. {subtopic.title}</div>
+                <div className="text-sm leading-relaxed">
+                  {index + 1}. {subtopic.title}
+                </div>
               </Button>
             </div>
           ))}

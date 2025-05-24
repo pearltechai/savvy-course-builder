@@ -65,8 +65,8 @@ const CoursePage = () => {
 
   if (!course) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p>Loading course...</p>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <p className="text-gray-600">Loading course...</p>
       </div>
     );
   }
@@ -159,11 +159,15 @@ const CoursePage = () => {
     : -1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Navigation */}
-        <div className="flex justify-between mb-6 items-center">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+        <div className="flex justify-between mb-8 items-center">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+            className="text-gray-600 hover:text-gray-900 font-medium"
+          >
             ← Back to Home
           </Button>
           <Button 
@@ -171,12 +175,13 @@ const CoursePage = () => {
             size="icon" 
             onClick={() => setIsApiKeyModalOpen(true)}
             title="OpenAI API Settings"
+            className="text-gray-600 hover:text-gray-900"
           >
             <Settings2 className="h-5 w-5" />
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Course Outline */}
           <div className="lg:col-span-1">
             <CourseOutline 
@@ -187,7 +192,7 @@ const CoursePage = () => {
           </div>
           
           {/* Right Column: Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {selectedSubtopic && (
               <>
                 {/* Subtopic Content */}
@@ -209,13 +214,13 @@ const CoursePage = () => {
                 
                 {/* Answer Display */}
                 {answerContent && (
-                  <div className="bg-white rounded-lg border p-6 animate-fade-in">
-                    <h3 className="font-medium text-lg mb-2">Answer:</h3>
-                    <div className="prose max-w-none">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl border-0 shadow-sm p-8 animate-fade-in">
+                    <h3 className="font-semibold text-lg mb-4 text-gray-900">Answer:</h3>
+                    <div className="prose prose-gray max-w-none">
                       {isLoading ? (
-                        <p className="text-muted-foreground">Generating answer...</p>
+                        <p className="text-gray-500">Generating answer...</p>
                       ) : (
-                        <p>{answerContent}</p>
+                        <p className="text-gray-700 leading-7">{answerContent}</p>
                       )}
                     </div>
                   </div>
