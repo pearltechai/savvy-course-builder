@@ -25,27 +25,33 @@ const SearchBar = ({ onSearch, isLoading = false }: SearchBarProps) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto px-4 sm:px-0">
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
         <Input
           type="text"
-          placeholder="Search for a topic (e.g., Machine Learning, World War II, Photosynthesis)"
+          placeholder="Search for a topic (e.g., Machine Learning, World War II)"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-grow text-base"
+          className="flex-grow text-sm sm:text-base h-10 sm:h-11"
           disabled={isLoading}
         />
         <Button 
           type="submit" 
-          className="bg-education-primary hover:bg-blue-600 text-white"
+          className="bg-education-primary hover:bg-blue-600 text-white h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base whitespace-nowrap"
           disabled={isLoading}
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
+              <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+              <span className="hidden sm:inline">Generating...</span>
+              <span className="sm:hidden">Loading...</span>
             </>
-          ) : 'Generate Course'}
+          ) : (
+            <>
+              <span className="hidden sm:inline">Generate Course</span>
+              <span className="sm:hidden">Generate</span>
+            </>
+          )}
         </Button>
       </form>
     </div>

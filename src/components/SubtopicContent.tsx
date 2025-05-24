@@ -33,47 +33,48 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
 
   return (
     <Card className="w-full border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-      <CardHeader className="pb-6">
+      <CardHeader className="pb-4 sm:pb-6 px-4 sm:px-6">
         <div className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
           {courseTitle}
         </div>
-        <CardTitle className="text-2xl font-semibold text-gray-900 leading-tight">
+        <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900 leading-tight">
           {subtopic.title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 px-4 sm:px-6">
         <div className="prose prose-gray max-w-none">
           {processedContent.map((block, index) => (
-            <div key={index} className="mb-6">
+            <div key={index} className="mb-4 sm:mb-6">
               {block.type === 'code' ? (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 overflow-x-auto font-mono text-sm">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-6 overflow-x-auto font-mono text-xs sm:text-sm">
                   <pre className="whitespace-pre-wrap text-gray-800">{block.content}</pre>
                 </div>
               ) : (
-                <p className="text-gray-700 leading-7 text-base mb-4">{block.content}</p>
+                <p className="text-gray-700 leading-6 sm:leading-7 text-sm sm:text-base mb-3 sm:mb-4">{block.content}</p>
               )}
             </div>
           ))}
         </div>
         
-        <div className="flex justify-center my-8">
+        <div className="flex justify-center my-6 sm:my-8">
           <Button 
             onClick={() => setQuizOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors duration-200 text-sm sm:text-base"
           >
-            <FileText className="mr-2 h-4 w-4" />
-            Take a Quiz on This Topic
+            <FileText className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Take a Quiz on This Topic</span>
+            <span className="sm:hidden">Take Quiz</span>
           </Button>
         </div>
         
-        <Separator className="my-8 bg-gray-200" />
+        <Separator className="my-6 sm:my-8 bg-gray-200" />
         
-        <div className="flex justify-between mt-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-4 sm:mt-6">
           <Button
             variant="outline"
             onClick={onPrevious}
             disabled={isPreviousDisabled}
-            className="px-6 py-2.5 rounded-lg font-medium border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+            className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 text-sm sm:text-base order-2 sm:order-1"
           >
             Previous
           </Button>
@@ -81,11 +82,11 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
             onClick={onNext}
             disabled={isNextDisabled}
             className={cn(
-              "bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200",
+              "bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors duration-200 text-sm sm:text-base order-1 sm:order-2",
               isNextDisabled && "opacity-50 pointer-events-none"
             )}
           >
-            <BookOpen className="mr-2 h-4 w-4" />
+            <BookOpen className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             Next
           </Button>
         </div>

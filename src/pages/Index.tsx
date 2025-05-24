@@ -61,22 +61,22 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="flex justify-end mb-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-6xl">
+        <div className="flex justify-end mb-4 sm:mb-6">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => setIsApiKeyModalOpen(true)}
             title="OpenAI API Settings"
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 hover:text-gray-900 h-8 w-8 sm:h-10 sm:w-10"
           >
-            <Settings2 className="h-5 w-5" />
+            <Settings2 className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
         
         <Hero />
         
-        <div className="mt-16 mb-20">
+        <div className="mt-8 sm:mt-12 lg:mt-16 mb-12 sm:mb-16 lg:mb-20">
           <SearchBar onSearch={handleSearch} isLoading={isLoading} />
         </div>
         

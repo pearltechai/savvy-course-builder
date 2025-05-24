@@ -7,7 +7,7 @@ import SubtopicContent from '@/components/SubtopicContent';
 import ChatBar from '@/components/ChatBar';
 import { toast } from 'sonner';
 import { generateSuggestedQuestions } from '@/services/openaiService';
-import { Settings2 } from 'lucide-react';
+import { Settings2, Menu, X } from 'lucide-react';
 import ApiKeyModal from '@/components/ApiKeyModal';
 
 const CoursePage = () => {
@@ -20,6 +20,7 @@ const CoursePage = () => {
   const [answerContent, setAnswerContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Load course data
   useEffect(() => {
@@ -74,6 +75,7 @@ const CoursePage = () => {
   const handleSubtopicSelect = (subtopic: SubTopic) => {
     setSelectedSubtopic(subtopic);
     setAnswerContent(null); // Clear any previous answers
+    setIsSidebarOpen(false); // Close sidebar on mobile after selection
   };
 
   const handlePreviousSubtopic = () => {
@@ -160,30 +162,56 @@ const CoursePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-7xl">
         {/* Navigation */}
-        <div className="flex justify-between mb-8 items-center">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-            className="text-gray-600 hover:text-gray-900 font-medium"
-          >
-            ← Back to Home
-          </Button>
+        <div className="flex justify-between mb-4 sm:mb-8 items-center">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/')}
+              className="text-gray-600 hover:text-gray-900 font-medium text-sm sm:text-base"
+            >
+              ← <span className="hidden sm:inline">Back to Home</span><span className="sm:hidden">Home</span>
+            </Button>
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden text-gray-600 hover:text-gray-900"
+            >
+              {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => setIsApiKeyModalOpen(true)}
             title="OpenAI API Settings"
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 hover:text-gray-900 h-8 w-8 sm:h-10 sm:w-10"
           >
-            <Settings2 className="h-5 w-5" />
+            <Settings2 className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Course Outline */}
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          {/* Left Column: Course Outline - Mobile Overlay */}
+          <div className={`
+            lg:col-span-1 
+            ${isSidebarOpen ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto lg:relative lg:bg-transparent lg:p-0' : 'hidden lg:block'}
+          `}>
+            {isSidebarOpen && (
+              <div className="flex justify-end mb-4 lg:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
             <CourseOutline 
               course={course}
               onSubtopicSelect={handleSubtopicSelect}
@@ -192,7 +220,7 @@ const CoursePage = () => {
           </div>
           
           {/* Right Column: Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
             {selectedSubtopic && (
               <>
                 {/* Subtopic Content */}
@@ -214,13 +242,13 @@ const CoursePage = () => {
                 
                 {/* Answer Display */}
                 {answerContent && (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl border-0 shadow-sm p-8 animate-fade-in">
-                    <h3 className="font-semibold text-lg mb-4 text-gray-900">Answer:</h3>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl border-0 shadow-sm p-4 sm:p-6 lg:p-8 animate-fade-in">
+                    <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 text-gray-900">Answer:</h3>
                     <div className="prose prose-gray max-w-none">
                       {isLoading ? (
-                        <p className="text-gray-500">Generating answer...</p>
+                        <p className="text-gray-500 text-sm sm:text-base">Generating answer...</p>
                       ) : (
-                        <p className="text-gray-700 leading-7">{answerContent}</p>
+                        <p className="text-gray-700 leading-6 sm:leading-7 text-sm sm:text-base">{answerContent}</p>
                       )}
                     </div>
                   </div>
