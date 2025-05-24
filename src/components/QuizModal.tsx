@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -5,7 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -27,42 +27,6 @@ interface QuizModalProps {
   subtopic: SubTopic;
 }
 
-const mockQuizQuestions = (subtopicTitle: string): QuizQuestion[] => {
-  // Generate generic quiz questions based on the subtopic title
-  return [
-    {
-      question: `What is a key concept related to ${subtopicTitle}?`,
-      options: [
-        `The fundamental principles of ${subtopicTitle}`,
-        `The history of developments in ${subtopicTitle}`,
-        `The application of ${subtopicTitle} in modern contexts`,
-        `The theoretical framework of ${subtopicTitle}`
-      ],
-      correctAnswer: 0
-    },
-    {
-      question: `Which of the following is true about ${subtopicTitle}?`,
-      options: [
-        `It originated in ancient Greece`,
-        `It was first documented in the 18th century`,
-        `It is considered a foundational concept in the field`,
-        `It was discovered by accident`
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: `How does ${subtopicTitle} impact related fields?`,
-      options: [
-        `It has minimal impact on other domains`,
-        `It provides foundational methodologies for many related disciplines`,
-        `Its influence is limited to theoretical applications`,
-        `It is primarily used in historical contexts`
-      ],
-      correctAnswer: 1
-    }
-  ];
-};
-
 const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, subtopic }) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -70,6 +34,7 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, subtopic }) => {
   const [score, setScore] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -79,28 +44,23 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, subtopic }) => {
       setScore(0);
       setQuizCompleted(false);
       setIsLoading(true);
+      setError(null);
       
       const fetchQuestions = async () => {
         try {
           const apiKey = localStorage.getItem('openai_api_key');
           
-          if (apiKey) {
-            try {
-              // Try to generate questions using OpenAI
-              const generatedQuestions = await generateQuizQuestions(subtopic.title, subtopic.content);
-              setQuestions(generatedQuestions);
-            } catch (error) {
-              console.error("Error generating quiz questions:", error);
-              // Fall back to mock questions
-              setQuestions(mockQuizQuestions(subtopic.title));
-            }
-          } else {
-            // No API key, use mock questions
-            setQuestions(mockQuizQuestions(subtopic.title));
+          if (!apiKey) {
+            setError('OpenAI API key is required to generate quiz questions. Please add your API key in settings.');
+            setIsLoading(false);
+            return;
           }
-        } catch (error) {
-          console.error("Failed to set up quiz:", error);
-          setQuestions(mockQuizQuestions(subtopic.title));
+
+          const generatedQuestions = await generateQuizQuestions(subtopic.title, subtopic.content);
+          setQuestions(generatedQuestions);
+        } catch (error: any) {
+          console.error("Error generating quiz questions:", error);
+          setError(`Failed to generate quiz questions: ${error.message || 'Unknown error'}`);
         } finally {
           setIsLoading(false);
         }
@@ -153,6 +113,13 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, subtopic }) => {
           <div className="flex justify-center items-center py-8">
             <p>Loading quiz questions...</p>
           </div>
+        ) : error ? (
+          <div className="py-6 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         ) : quizCompleted ? (
           <div className="py-6 text-center">
             <h3 className="text-xl font-bold mb-4">Quiz Completed!</h3>
@@ -199,7 +166,7 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, subtopic }) => {
           </div>
         ) : (
           <div className="py-6 text-center">
-            <p>Failed to load quiz questions.</p>
+            <p>No quiz questions available.</p>
             <Button variant="outline" onClick={onClose} className="mt-4">
               Close
             </Button>

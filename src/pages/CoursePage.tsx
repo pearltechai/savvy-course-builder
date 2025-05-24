@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import CourseOutline, { CourseStructure, SubTopic } from '@/components/CourseOutline';
 import SubtopicContent from '@/components/SubtopicContent';
 import ChatBar from '@/components/ChatBar';
-import { getSuggestedQuestions } from '@/utils/mockData';
 import { toast } from 'sonner';
 import { generateSuggestedQuestions } from '@/services/openaiService';
 import { Settings2 } from 'lucide-react';
@@ -31,8 +31,7 @@ const CoursePage = () => {
         setSelectedSubtopic(location.state.course.subtopics[0]);
       }
     } else {
-      // In a real app, we would fetch course data from an API
-      // For now, just redirect back to home
+      // No course data available
       toast.error('Course not found');
       navigate('/');
     }
@@ -46,7 +45,6 @@ const CoursePage = () => {
         
         if (apiKey) {
           try {
-            // Using OpenAI to generate questions
             const questions = await generateSuggestedQuestions(
               selectedSubtopic.title,
               selectedSubtopic.content
@@ -54,14 +52,10 @@ const CoursePage = () => {
             setSuggestedQuestions(questions);
           } catch (error) {
             console.error('Error generating questions:', error);
-            // Fallback to mock questions
-            const mockQuestions = getSuggestedQuestions(selectedSubtopic.title);
-            setSuggestedQuestions(mockQuestions);
+            setSuggestedQuestions(['No API key available. Please add your OpenAI API key to get suggested questions.']);
           }
         } else {
-          // No API key, use mock data
-          const questions = getSuggestedQuestions(selectedSubtopic.title);
-          setSuggestedQuestions(questions);
+          setSuggestedQuestions(['Add your OpenAI API key in settings to get AI-generated suggested questions.']);
         }
       }
     };
@@ -103,81 +97,61 @@ const CoursePage = () => {
   };
 
   const handleAskQuestion = async (question: string) => {
+    const apiKey = localStorage.getItem('openai_api_key');
+    
+    if (!apiKey) {
+      toast.error('Please add your OpenAI API key in settings to ask questions.');
+      setIsApiKeyModalOpen(true);
+      return;
+    }
+
     // Show loading indicator
-    setAnswerContent("Thinking...");
+    setAnswerContent("Generating answer...");
     setIsLoading(true);
     
     try {
-      const apiKey = localStorage.getItem('openai_api_key');
-      
-      if (apiKey) {
-        // Use OpenAI for generating an answer
-        try {
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an educational assistant answering questions about ${selectedSubtopic?.title}. 
+              Provide accurate, educational responses.`
             },
-            body: JSON.stringify({
-              model: 'gpt-4o',
-              messages: [
-                {
-                  role: 'system',
-                  content: `You are an educational assistant answering questions about ${selectedSubtopic?.title}. 
-                  Provide accurate, educational responses.`
-                },
-                {
-                  role: 'user',
-                  content: `Based on this topic: ${selectedSubtopic?.title}
-                  
-                  With this content: ${selectedSubtopic?.content.substring(0, 1000)}
-                  
-                  Please answer this question: ${question}`
-                }
-              ],
-              temperature: 0.7,
-              max_tokens: 800
-            })
-          });
-          
-          const data = await response.json();
-          
-          if (data.error) {
-            throw new Error(`API Error: ${data.error.message || data.error}`);
-          }
-          
-          const answer = data.choices[0]?.message?.content || "Sorry, I couldn't generate an answer.";
-          setAnswerContent(answer);
-        } catch (error: any) {
-          console.error('OpenAI API error:', error);
-          // Fall back to mock answer
-          setAnswerContent(generateMockAnswer(question, selectedSubtopic?.title || ""));
-        }
-      } else {
-        // No API key, use mock answer
-        setTimeout(() => {
-          const answer = generateMockAnswer(question, selectedSubtopic?.title || "");
-          setAnswerContent(answer);
-        }, 1000);
+            {
+              role: 'user',
+              content: `Based on this topic: ${selectedSubtopic?.title}
+              
+              With this content: ${selectedSubtopic?.content.substring(0, 1000)}
+              
+              Please answer this question: ${question}`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 800
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(`API Error: ${data.error.message || data.error}`);
       }
-    } catch (error) {
-      console.error('Error generating answer:', error);
-      setAnswerContent("Sorry, an error occurred while generating the answer. Please try again later.");
+      
+      const answer = data.choices[0]?.message?.content || "Sorry, I couldn't generate an answer.";
+      setAnswerContent(answer);
+    } catch (error: any) {
+      console.error('OpenAI API error:', error);
+      setAnswerContent(`Error generating answer: ${error.message}. Please check your API key and try again.`);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Mock function to generate answers (fallback)
-  const generateMockAnswer = (question: string, subtopicTitle: string): string => {
-    const responses = [
-      `The question about ${question} related to ${subtopicTitle} is an interesting one. In this context, we should consider multiple perspectives. First, the fundamental principles suggest that this involves a complex interplay of factors. Research has shown that there are several key aspects to consider, including historical precedents, theoretical frameworks, and practical applications. Experts generally agree that while there's no one-size-fits-all answer, the most effective approach depends on specific circumstances and objectives.`,
-      `Regarding ${question} in the context of ${subtopicTitle}, it's important to understand the underlying concepts. This topic has evolved significantly over time, with various schools of thought contributing different perspectives. Modern understanding synthesizes these views, recognizing that contextual factors play a crucial role. While debates continue in some areas, there's consensus on the core principles that form the foundation of this subject. Recent advancements have further refined our understanding, though some questions remain open for further research.`,
-      `When we examine ${question} in ${subtopicTitle}, we find that it represents a critical aspect of the broader discipline. Historical developments have shaped current practices, with notable contributions from key figures in the field. The practical implications are significant across various domains, including real-world applications and theoretical research. Current trends suggest growing interest in innovative approaches, though traditional methods retain value in specific contexts. The integration of new technologies has opened additional avenues for exploration and implementation.`
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   const currentIndex = selectedSubtopic 

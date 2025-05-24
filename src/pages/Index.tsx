@@ -6,7 +6,6 @@ import Hero from '@/components/Hero';
 import SearchBar from '@/components/SearchBar';
 import SampleTopics from '@/components/SampleTopics';
 import { CourseStructure } from '@/components/CourseOutline';
-import { generateMockCourse } from '@/utils/mockData';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { Button } from '@/components/ui/button';
 import { Settings2 } from 'lucide-react';
@@ -18,49 +17,39 @@ const Index = () => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   
   const handleSearch = async (topic: string) => {
+    const apiKey = localStorage.getItem('openai_api_key');
+    
+    if (!apiKey) {
+      toast.error('Please add your OpenAI API key in settings to generate courses.');
+      setIsApiKeyModalOpen(true);
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      let course: CourseStructure | null = null;
-      const apiKey = localStorage.getItem('openai_api_key');
-      
-      if (apiKey) {
-        // Try to generate content with OpenAI
-        try {
-          const aiResponse = await generateCourseContent(topic);
-          if (aiResponse) {
-            // Map the API response to our CourseStructure format
-            course = {
-              id: `course-${Date.now()}`,
-              title: aiResponse.title || topic,
-              description: aiResponse.description || `A comprehensive course about ${topic}`,
-              subtopics: aiResponse.subtopics.map((subtopic, index) => ({
-                id: `subtopic-${Date.now()}-${index + 1}`,
-                title: subtopic.title,
-                description: subtopic.description,
-                content: subtopic.content
-              }))
-            };
-          }
-        } catch (error: any) {
-          console.error('Failed to generate content with OpenAI:', error);
-          toast.error(`OpenAI API error: ${error.message || 'Unknown error'}`);
-          // Fall back to mock data
-          course = generateMockCourse(topic);
-        }
-      } else {
-        // No API key, use mock data
-        course = generateMockCourse(topic);
-      }
-
-      if (course) {
+      const aiResponse = await generateCourseContent(topic);
+      if (aiResponse) {
+        // Map the API response to our CourseStructure format
+        const course: CourseStructure = {
+          id: `course-${Date.now()}`,
+          title: aiResponse.title || topic,
+          description: aiResponse.description || `A comprehensive course about ${topic}`,
+          subtopics: aiResponse.subtopics.map((subtopic, index) => ({
+            id: `subtopic-${Date.now()}-${index + 1}`,
+            title: subtopic.title,
+            description: subtopic.description,
+            content: subtopic.content
+          }))
+        };
+        
         navigate(`/course/${course.id}`, { state: { course } });
       } else {
-        toast.error('Failed to generate course content');
+        toast.error('Failed to generate course content. Please try again.');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('An unexpected error occurred');
+    } catch (error: any) {
+      console.error('Failed to generate content with OpenAI:', error);
+      toast.error(`Failed to generate course: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
