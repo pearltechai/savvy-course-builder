@@ -95,6 +95,15 @@
   }
 }
 
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
+
 .course-card {
   @apply bg-white rounded-lg shadow-md transition-all hover:shadow-lg border border-gray-100;
 }
