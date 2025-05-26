@@ -6,10 +6,12 @@ import { Separator } from '@/components/ui/separator';
 import { SubTopic } from './CourseOutline';
 import { BookOpen, FileText, Check } from 'lucide-react';
 import QuizModal from './QuizModal';
+import SuggestedQuestions from './SuggestedQuestions';
 import { useState } from 'react';
 import { cn, extractCodeBlocks } from '@/lib/utils';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface SubtopicContentProps {
   subtopic: SubTopic;
@@ -38,6 +40,11 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
     if (courseId && subtopic.id) {
       markComplete({ courseId, subtopicId: subtopic.id });
     }
+  };
+
+  const handleQuestionSelect = (question: string) => {
+    // For now, we'll show a toast. In the future, this could integrate with an AI chat
+    toast.info(`Great question! "${question}" - Consider exploring this topic further or asking in our community.`);
   };
 
   // Process content to identify code blocks and regular paragraphs
@@ -100,6 +107,13 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
             </Button>
           )}
         </div>
+
+        {/* Add Suggested Questions */}
+        <SuggestedQuestions
+          subtopicTitle={subtopic.title}
+          courseTitle={courseTitle}
+          onQuestionSelect={handleQuestionSelect}
+        />
         
         <Separator className="my-6 sm:my-8 bg-gray-200" />
         
