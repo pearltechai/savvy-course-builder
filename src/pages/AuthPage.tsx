@@ -8,11 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, Mail } from 'lucide-react';
 
 const AuthPage = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -32,7 +36,13 @@ const AuthPage = () => {
     const { error } = await signIn(email, password);
 
     if (error) {
-      toast.error(error.message);
+      if (error.message.includes('Email not confirmed')) {
+        toast.error('Please check your email and click the confirmation link before signing in.');
+      } else if (error.message.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please check your credentials.');
+      } else {
+        toast.error(error.message || 'Failed to sign in');
+      }
     } else {
       toast.success('Welcome back!');
       navigate('/');
@@ -50,16 +60,61 @@ const AuthPage = () => {
     const password = formData.get('password') as string;
     const fullName = formData.get('fullName') as string;
 
-    const { error } = await signUp(email, password, fullName);
+    const { error, needsConfirmation } = await signUp(email, password, fullName);
 
     if (error) {
-      toast.error(error.message);
+      if (error.message.includes('User already registered')) {
+        toast.error('An account with this email already exists. Please sign in instead.');
+      } else {
+        toast.error(error.message || 'Failed to create account');
+      }
+    } else if (needsConfirmation) {
+      setUserEmail(email);
+      setShowConfirmation(true);
+      toast.success('Account created! Please check your email for a confirmation link.');
     } else {
-      toast.success('Account created successfully! Please check your email for verification.');
+      toast.success('Account created successfully!');
+      navigate('/');
     }
 
     setIsLoading(false);
   };
+
+  if (showConfirmation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="h-12 w-12 text-green-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
+            <CardDescription>
+              We've sent a confirmation link to {userEmail}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <Mail className="h-4 w-4" />
+              <AlertDescription>
+                Please check your email and click the confirmation link to complete your registration. 
+                You may need to check your spam folder.
+              </AlertDescription>
+            </Alert>
+            <div className="mt-6 space-y-4">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowConfirmation(false)}
+              >
+                Back to Sign In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
