@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SubTopic } from './CourseOutline';
-import { BookOpen, FileText } from 'lucide-react';
+import { BookOpen, FileText, Check } from 'lucide-react';
 import QuizModal from './QuizModal';
 import { useState } from 'react';
 import { cn, extractCodeBlocks } from '@/lib/utils';
+import { useUserProgress } from '@/hooks/useUserProgress';
+import { useParams } from 'react-router-dom';
 
 interface SubtopicContentProps {
   subtopic: SubTopic;
@@ -27,6 +29,16 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
   isNextDisabled,
 }) => {
   const [quizOpen, setQuizOpen] = useState(false);
+  const { courseId } = useParams();
+  const { progress, markComplete } = useUserProgress(courseId);
+  
+  const isCompleted = progress.some(p => p.subtopic_id === subtopic.id);
+
+  const handleMarkComplete = () => {
+    if (courseId && subtopic.id) {
+      markComplete({ courseId, subtopicId: subtopic.id });
+    }
+  };
 
   // Process content to identify code blocks and regular paragraphs
   const processedContent = processContent(subtopic.content);
@@ -34,12 +46,22 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
   return (
     <Card className="w-full border-0 shadow-sm bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-4 sm:pb-6 px-4 sm:px-6">
-        <div className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
-          {courseTitle}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
+              {courseTitle}
+            </div>
+            <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900 leading-tight">
+              {subtopic.title}
+            </CardTitle>
+          </div>
+          {isCompleted && (
+            <div className="flex items-center text-green-600">
+              <Check className="h-5 w-5 mr-1" />
+              <span className="text-sm font-medium">Completed</span>
+            </div>
+          )}
         </div>
-        <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-900 leading-tight">
-          {subtopic.title}
-        </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-4 sm:px-6">
         <div className="prose prose-gray max-w-none">
@@ -56,15 +78,27 @@ const SubtopicContent: React.FC<SubtopicContentProps> = ({
           ))}
         </div>
         
-        <div className="flex justify-center my-6 sm:my-8">
+        <div className="flex flex-col sm:flex-row justify-center gap-3 my-6 sm:my-8">
           <Button 
             onClick={() => setQuizOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors duration-200 text-sm sm:text-base"
+            variant="outline"
+            className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors duration-200 text-sm sm:text-base"
           >
             <FileText className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Take a Quiz on This Topic</span>
             <span className="sm:hidden">Take Quiz</span>
           </Button>
+          
+          {!isCompleted && (
+            <Button 
+              onClick={handleMarkComplete}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors duration-200 text-sm sm:text-base"
+            >
+              <Check className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Mark as Complete</span>
+              <span className="sm:hidden">Complete</span>
+            </Button>
+          )}
         </div>
         
         <Separator className="my-6 sm:my-8 bg-gray-200" />
