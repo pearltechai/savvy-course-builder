@@ -15,6 +15,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Payment creation started");
+
     // Create Supabase client using service role for secure operations
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -23,7 +25,11 @@ serve(async (req) => {
     );
 
     // Get authenticated user
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header provided");
+    }
+
     const token = authHeader.replace("Bearer ", "");
     const { data: userData } = await supabaseAdmin.auth.getUser(token);
     const user = userData.user;
@@ -32,14 +38,23 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
+    console.log("User authenticated:", user.id);
+
     const { courseId } = await req.json();
     
     if (!courseId) {
       throw new Error("Course ID is required");
     }
 
+    console.log("Creating payment for course:", courseId);
+
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("Stripe secret key not configured");
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -52,6 +67,9 @@ serve(async (req) => {
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      console.log("Found existing customer:", customerId);
+    } else {
+      console.log("No existing customer found");
     }
 
     // Create payment session for $1 course
@@ -80,14 +98,23 @@ serve(async (req) => {
       },
     });
 
+    console.log("Stripe session created:", session.id);
+
     // Create pending payment record
-    await supabaseAdmin.from("user_payments").insert({
+    const { error: insertError } = await supabaseAdmin.from("user_payments").insert({
       user_id: user.id,
       course_id: courseId,
       amount: 100,
       stripe_payment_intent_id: session.payment_intent as string,
       status: "pending",
     });
+
+    if (insertError) {
+      console.error("Error inserting payment record:", insertError);
+      // Don't throw here as the Stripe session is already created
+    } else {
+      console.log("Payment record created");
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

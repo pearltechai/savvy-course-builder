@@ -26,19 +26,36 @@ export const usePayments = () => {
 
   const createPaymentMutation = useMutation({
     mutationFn: async (courseId: string) => {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: { courseId },
-      });
+      console.log('Creating payment for course:', courseId);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: { courseId },
+        });
 
-      if (error) throw error;
-      return data;
+        console.log('Payment response:', data, error);
+
+        if (error) {
+          console.error('Function invocation error:', error);
+          throw new Error(error.message || 'Failed to create payment session');
+        }
+
+        return data;
+      } catch (err: any) {
+        console.error('Payment creation failed:', err);
+        throw new Error(err.message || 'Failed to create payment session');
+      }
     },
     onSuccess: (data) => {
-      if (data.url) {
+      console.log('Payment session created successfully:', data);
+      if (data?.url) {
         window.open(data.url, '_blank');
+      } else {
+        toast.error('No payment URL received');
       }
     },
     onError: (error: any) => {
+      console.error('Payment mutation error:', error);
       toast.error(`Payment failed: ${error.message}`);
     },
   });
