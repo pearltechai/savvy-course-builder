@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses } from '@/hooks/useCourses';
+import { usePayments } from '@/hooks/usePayments';
 import Hero from '@/components/Hero';
 import SearchBar from '@/components/SearchBar';
 import SampleTopics from '@/components/SampleTopics';
@@ -20,6 +21,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { createCourse, isCreating } = useCourses();
+  const { courseAccess } = usePayments();
   const [isLoading, setIsLoading] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('generate');
@@ -29,6 +31,11 @@ const Index = () => {
       toast.error('Please sign in to generate courses.');
       navigate('/auth');
       return;
+    }
+
+    // Check if user has reached the free course limit
+    if (!courseAccess.canAccess) {
+      toast.error('You have used all 3 free courses. Additional courses cost $1 each and can be purchased when viewing the course.');
     }
 
     const apiKey = localStorage.getItem('openai_api_key');
@@ -122,6 +129,14 @@ const Index = () => {
             
             <TabsContent value="generate" className="space-y-8">
               <Hero />
+              {!courseAccess.canAccess && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                  <p className="text-orange-800 text-sm">
+                    <strong>Free courses used:</strong> You've used all 3 free courses. 
+                    Additional courses cost $1 each and can be purchased when viewing the course.
+                  </p>
+                </div>
+              )}
               <div className="mt-8 sm:mt-12 lg:mt-16 mb-12 sm:mb-16 lg:mb-20">
                 <SearchBar onSearch={handleSearch} isLoading={isLoading || isCreating} />
               </div>

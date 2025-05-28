@@ -3,7 +3,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCourses } from '@/hooks/useCourses';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { usePayments } from '@/hooks/usePayments';
 import CourseCard from './CourseCard';
+import CourseAccessBadge from './CourseAccessBadge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Clock, Trophy } from 'lucide-react';
 
@@ -11,6 +13,7 @@ const MyCourses = () => {
   const navigate = useNavigate();
   const { courses, isLoading } = useCourses();
   const { progress } = useUserProgress();
+  const { courseAccess } = usePayments();
 
   const getProgressPercentage = (courseId: string, subtopicsCount: number) => {
     const completedSubtopics = progress.filter(p => p.course_id === courseId).length;
@@ -33,6 +36,8 @@ const MyCourses = () => {
           <CardTitle className="text-xl mb-2">No courses yet</CardTitle>
           <CardDescription>
             Generate your first course using the search bar above!
+            <br />
+            <span className="text-green-600 font-medium">First 3 courses are free!</span>
           </CardDescription>
         </CardContent>
       </Card>
@@ -77,9 +82,22 @@ const MyCourses = () => {
         </Card>
       </div>
 
+      {courseAccess.freeCoursesUsed >= 3 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <p className="text-blue-800 text-sm">
+              <strong>Free courses used:</strong> You've used all 3 free courses. Additional courses cost $1 each.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => (
+        {courses.map((course, index) => (
           <div key={course.id} className="relative">
+            <div className="absolute top-2 right-2 z-10">
+              <CourseAccessBadge courseIndex={index} courseId={course.id} />
+            </div>
             <CourseCard
               id={course.id}
               title={course.title}
