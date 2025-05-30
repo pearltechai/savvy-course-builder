@@ -2,19 +2,24 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
 import CourseOutline from '@/components/CourseOutline';
 import SubtopicContent from '@/components/SubtopicContent';
 import PaymentRequired from '@/components/PaymentRequired';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useCourseAccess } from '@/hooks/useCourseAccess';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Card, CardContent, CardDescription } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 
 const CoursePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { courseId } = useParams();
+  const { user } = useAuth();
   const course = location.state?.course;
+  const isTemporary = location.state?.isTemporary;
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string | null>(
     course?.subtopics?.[0]?.id || null
   );
@@ -44,7 +49,12 @@ const CoursePage = () => {
   }, [course, selectedSubtopicId]);
 
   const handleSubtopicComplete = () => {
-    if (selectedSubtopicId && courseId) {
+    if (!user) {
+      toast.error('Please sign in to save your progress.');
+      return;
+    }
+    
+    if (selectedSubtopicId && courseId && !isTemporary) {
       markComplete(
         { courseId, subtopicId: selectedSubtopicId },
         {
@@ -74,8 +84,33 @@ const CoursePage = () => {
     );
   }
 
-  // Show loading while checking access
-  if (isCheckingAccess) {
+  // For temporary courses (non-logged in users), skip access check
+  if (!isTemporary && !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-6 text-center">
+            <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Sign in required</h2>
+            <CardDescription className="mb-4">
+              You need to sign in to access saved courses and track your progress.
+            </CardDescription>
+            <div className="space-y-2">
+              <Link to="/auth">
+                <Button className="w-full">Sign In</Button>
+              </Link>
+              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+                Generate New Course
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show loading while checking access for saved courses
+  if (!isTemporary && isCheckingAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
@@ -85,17 +120,19 @@ const CoursePage = () => {
     );
   }
 
-  // Show payment required if user doesn't have access
-  if (!hasAccess) {
+  // Show payment required if user doesn't have access to saved course
+  if (!isTemporary && !hasAccess) {
     return <PaymentRequired courseId={courseId || ''} courseTitle={course.title} />;
   }
 
   const selectedSubtopic = course.subtopics.find((st: any) => st.id === selectedSubtopicId);
   const currentIndex = course.subtopics.findIndex((st: any) => st.id === selectedSubtopicId);
-  const isCompleted = progress.some(p => p.subtopic_id === selectedSubtopicId);
+  const isCompleted = !isTemporary && progress.some(p => p.subtopic_id === selectedSubtopicId);
 
   const handleNext = () => {
-    handleSubtopicComplete();
+    if (user && !isTemporary) {
+      handleSubtopicComplete();
+    }
     if (currentIndex < course.subtopics.length - 1) {
       setSelectedSubtopicId(course.subtopics[currentIndex + 1].id);
     }
@@ -119,6 +156,17 @@ const CoursePage = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Home
           </Button>
+          
+          {isTemporary && (
+            <Card className="mb-4 bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <p className="text-blue-800 text-sm">
+                  <strong>Temporary Course:</strong> This course is not saved. 
+                  <Link to="/auth" className="underline ml-1">Sign in</Link> to save your progress and access it later.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">

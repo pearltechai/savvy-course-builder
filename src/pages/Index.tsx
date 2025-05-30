@@ -25,19 +25,9 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('generate');
+  const [generatedCourse, setGeneratedCourse] = useState<any>(null);
   
   const handleSearch = async (topic: string) => {
-    if (!user) {
-      toast.error('Please sign in to generate courses.');
-      navigate('/auth');
-      return;
-    }
-
-    // Check if user has reached the free course limit
-    if (!courseAccess.canAccess) {
-      toast.error('You have used all 3 free courses. Additional courses cost $1 each and can be purchased when viewing the course.');
-    }
-
     const apiKey = localStorage.getItem('openai_api_key');
     
     if (!apiKey) {
@@ -51,19 +41,49 @@ const Index = () => {
     try {
       const aiResponse = await generateCourseContent(topic);
       if (aiResponse) {
-        // Save course to database
-        await createCourse({
-          title: aiResponse.title || topic,
-          description: aiResponse.description || `A comprehensive course about ${topic}`,
-          subtopics: aiResponse.subtopics.map(subtopic => ({
-            title: subtopic.title,
-            description: subtopic.description,
-            content: subtopic.content
-          }))
-        });
+        if (user) {
+          // User is logged in - check course limits and save to database
+          if (!courseAccess.canAccess) {
+            toast.error('You have used all 3 free courses. Additional courses cost $1 each and can be purchased when viewing the course.');
+          }
 
-        toast.success('Course created and saved!');
-        setActiveTab('library');
+          await createCourse({
+            title: aiResponse.title || topic,
+            description: aiResponse.description || `A comprehensive course about ${topic}`,
+            subtopics: aiResponse.subtopics.map(subtopic => ({
+              title: subtopic.title,
+              description: subtopic.description,
+              content: subtopic.content
+            }))
+          });
+
+          toast.success('Course created and saved!');
+          setActiveTab('library');
+        } else {
+          // User is not logged in - just generate course for immediate viewing
+          const courseData = {
+            id: 'temp-' + Date.now(),
+            title: aiResponse.title || topic,
+            description: aiResponse.description || `A comprehensive course about ${topic}`,
+            subtopics: aiResponse.subtopics.map((subtopic, index) => ({
+              id: 'temp-subtopic-' + index,
+              title: subtopic.title,
+              description: subtopic.description,
+              content: subtopic.content
+            }))
+          };
+          
+          setGeneratedCourse(courseData);
+          toast.success('Course generated! Sign in to save your progress.');
+          
+          // Navigate to course page with generated content
+          navigate(`/course/temp-${Date.now()}`, { 
+            state: { 
+              course: courseData,
+              isTemporary: true
+            }
+          });
+        }
       } else {
         toast.error('Failed to generate course content. Please try again.');
       }
@@ -93,19 +113,17 @@ const Index = () => {
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <div></div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsApiKeyModalOpen(true)}
+              title="OpenAI API Settings"
+              className="text-gray-600 hover:text-gray-900 h-8 w-8 sm:h-10 sm:w-10"
+            >
+              <Settings2 className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
             {user ? (
-              <>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setIsApiKeyModalOpen(true)}
-                  title="OpenAI API Settings"
-                  className="text-gray-600 hover:text-gray-900 h-8 w-8 sm:h-10 sm:w-10"
-                >
-                  <Settings2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                </Button>
-                <UserMenu />
-              </>
+              <UserMenu />
             ) : (
               <Link to="/auth">
                 <Button variant="outline">Sign In</Button>
@@ -150,6 +168,11 @@ const Index = () => {
         ) : (
           <>
             <Hero />
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-blue-800 text-sm">
+                <strong>Try it out:</strong> Generate courses instantly! Sign in later to save your progress and access your course library.
+              </p>
+            </div>
             <div className="mt-8 sm:mt-12 lg:mt-16 mb-12 sm:mb-16 lg:mb-20">
               <SearchBar onSearch={handleSearch} isLoading={isLoading} />
             </div>
