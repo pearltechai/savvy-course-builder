@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, User } from 'lucide-react';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { AppSidebar } from '@/components/AppSidebar';
+import { SubtopicSidebar } from '@/components/SubtopicSidebar';
 import SubtopicContent from '@/components/SubtopicContent';
 import PaymentRequired from '@/components/PaymentRequired';
 import { useUserProgress } from '@/hooks/useUserProgress';
@@ -175,34 +176,64 @@ const CoursePage = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 to-white">
-        {!isTemporary && <AppSidebar />}
-        <SidebarInset className="flex-1">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-6xl">
-            <div className="mb-6 flex items-center gap-4">
-              {!isTemporary && <SidebarTrigger />}
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate('/')}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
-              </Button>
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-white">
+      <ResizablePanelGroup direction="horizontal" className="min-h-screen">
+        {/* Left Panel - Course Names */}
+        {!isTemporary && (
+          <>
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+              <AppSidebar 
+                selectedCourseId={courseId}
+                onCourseSelect={(id) => {
+                  // Handle course selection if needed
+                }}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+          </>
+        )}
+        
+        {/* Middle Panel - Subtopics */}
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+          <SubtopicSidebar
+            course={course}
+            selectedSubtopicId={selectedSubtopicId}
+            onSubtopicSelect={setSelectedSubtopicId}
+            isTemporary={isTemporary}
+          />
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        {/* Right Panel - Content */}
+        <ResizablePanel defaultSize={55} minSize={40}>
+          <div className="h-full flex flex-col">
+            {/* Header */}
+            <div className="p-4 border-b bg-white">
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate('/')}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Home
+                </Button>
+              </div>
+              
+              {isTemporary && (
+                <Card className="mt-4 bg-blue-50 border-blue-200">
+                  <CardContent className="p-4">
+                    <p className="text-blue-800 text-sm">
+                      <strong>Temporary Course:</strong> This course is not saved. 
+                      <Link to="/auth" className="underline ml-1">Sign in</Link> to save your progress and access it later.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             
-            {isTemporary && (
-              <Card className="mb-4 bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <p className="text-blue-800 text-sm">
-                    <strong>Temporary Course:</strong> This course is not saved. 
-                    <Link to="/auth" className="underline ml-1">Sign in</Link> to save your progress and access it later.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="space-y-6">
+            {/* Content Area */}
+            <div className="flex-1 overflow-auto p-4">
               {selectedSubtopic ? (
                 <SubtopicContent
                   subtopic={selectedSubtopic}
@@ -219,9 +250,9 @@ const CoursePage = () => {
               )}
             </div>
           </div>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   );
 };
 
