@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -28,7 +27,13 @@ const Index = () => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('generate');
   const [generatedCourse, setGeneratedCourse] = useState<any>(null);
-  
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+
+  const handleCourseSelect = (courseId: string) => {
+    setSelectedCourseId(courseId);
+    navigate(`/course/${courseId}`);
+  };
+
   const handleSearch = async (topic: string) => {
     const apiKey = localStorage.getItem('openai_api_key');
     
@@ -114,7 +119,10 @@ const Index = () => {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 to-white">
-          <AppSidebar />
+          <AppSidebar 
+            selectedCourseId={selectedCourseId}
+            onCourseSelect={handleCourseSelect}
+          />
           <SidebarInset className="flex-1">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-6xl">
               <div className="flex justify-between items-center mb-4 sm:mb-6">
