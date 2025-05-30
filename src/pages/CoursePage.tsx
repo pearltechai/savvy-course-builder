@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, User } from 'lucide-react';
-import CourseOutline from '@/components/CourseOutline';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
 import SubtopicContent from '@/components/SubtopicContent';
 import PaymentRequired from '@/components/PaymentRequired';
 import { useUserProgress } from '@/hooks/useUserProgress';
@@ -20,8 +21,10 @@ const CoursePage = () => {
   const { user } = useAuth();
   const course = location.state?.course;
   const isTemporary = location.state?.isTemporary;
+  const urlParams = new URLSearchParams(location.search);
+  const subtopicFromUrl = urlParams.get('subtopic');
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string | null>(
-    course?.subtopics?.[0]?.id || null
+    location.state?.selectedSubtopicId || subtopicFromUrl || course?.subtopics?.[0]?.id || null
   );
 
   const { progress, markComplete } = useUserProgress(courseId);
@@ -47,6 +50,15 @@ const CoursePage = () => {
       setSelectedSubtopicId(course.subtopics[0].id);
     }
   }, [course, selectedSubtopicId]);
+
+  // Update selected subtopic when URL changes
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const subtopicFromUrl = urlParams.get('subtopic');
+    if (subtopicFromUrl && subtopicFromUrl !== selectedSubtopicId) {
+      setSelectedSubtopicId(subtopicFromUrl);
+    }
+  }, [location.search, selectedSubtopicId]);
 
   const handleSubtopicComplete = () => {
     if (!user) {
@@ -134,69 +146,82 @@ const CoursePage = () => {
       handleSubtopicComplete();
     }
     if (currentIndex < course.subtopics.length - 1) {
-      setSelectedSubtopicId(course.subtopics[currentIndex + 1].id);
+      const nextSubtopicId = course.subtopics[currentIndex + 1].id;
+      setSelectedSubtopicId(nextSubtopicId);
+      navigate(`/course/${courseId}?subtopic=${nextSubtopicId}`, { 
+        state: { 
+          course,
+          isTemporary,
+          selectedSubtopicId: nextSubtopicId
+        },
+        replace: true 
+      });
     }
   };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setSelectedSubtopicId(course.subtopics[currentIndex - 1].id);
+      const prevSubtopicId = course.subtopics[currentIndex - 1].id;
+      setSelectedSubtopicId(prevSubtopicId);
+      navigate(`/course/${courseId}?subtopic=${prevSubtopicId}`, { 
+        state: { 
+          course,
+          isTemporary,
+          selectedSubtopicId: prevSubtopicId
+        },
+        replace: true 
+      });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-7xl">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
-          
-          {isTemporary && (
-            <Card className="mb-4 bg-blue-50 border-blue-200">
-              <CardContent className="p-4">
-                <p className="text-blue-800 text-sm">
-                  <strong>Temporary Course:</strong> This course is not saved. 
-                  <Link to="/auth" className="underline ml-1">Sign in</Link> to save your progress and access it later.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-1">
-            <CourseOutline
-              course={course}
-              onSubtopicSelect={(subtopic) => setSelectedSubtopicId(subtopic.id)}
-              selectedSubtopicId={selectedSubtopicId}
-            />
-          </div>
-
-          <div className="lg:col-span-2">
-            {selectedSubtopic ? (
-              <SubtopicContent
-                subtopic={selectedSubtopic}
-                courseTitle={course.title}
-                onPrevious={handlePrevious}
-                onNext={handleNext}
-                isPreviousDisabled={currentIndex === 0}
-                isNextDisabled={currentIndex === course.subtopics.length - 1}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-gray-500">Select a topic to begin learning</p>
-              </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 to-white">
+        {!isTemporary && <AppSidebar />}
+        <SidebarInset className="flex-1">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-6xl">
+            <div className="mb-6 flex items-center gap-4">
+              {!isTemporary && <SidebarTrigger />}
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
+              </Button>
+            </div>
+            
+            {isTemporary && (
+              <Card className="mb-4 bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <p className="text-blue-800 text-sm">
+                    <strong>Temporary Course:</strong> This course is not saved. 
+                    <Link to="/auth" className="underline ml-1">Sign in</Link> to save your progress and access it later.
+                  </p>
+                </CardContent>
+              </Card>
             )}
+
+            <div className="space-y-6">
+              {selectedSubtopic ? (
+                <SubtopicContent
+                  subtopic={selectedSubtopic}
+                  courseTitle={course.title}
+                  onPrevious={handlePrevious}
+                  onNext={handleNext}
+                  isPreviousDisabled={currentIndex === 0}
+                  isNextDisabled={currentIndex === course.subtopics.length - 1}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-64">
+                  <p className="text-gray-500">Select a topic to begin learning</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
