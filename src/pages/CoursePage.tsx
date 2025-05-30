@@ -97,7 +97,7 @@ const CoursePage = () => {
     );
   }
 
-  // For temporary courses (non-logged in users), skip access check
+  // For saved courses (non-temporary), require user login
   if (!isTemporary && !user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
@@ -122,8 +122,8 @@ const CoursePage = () => {
     );
   }
 
-  // Show loading while checking access for saved courses
-  if (!isTemporary && isCheckingAccess) {
+  // Show loading while checking access for saved courses (only if user is logged in)
+  if (!isTemporary && user && isCheckingAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
@@ -134,13 +134,13 @@ const CoursePage = () => {
   }
 
   // Show payment required if user doesn't have access to saved course
-  if (!isTemporary && !hasAccess) {
+  if (!isTemporary && user && !hasAccess) {
     return <PaymentRequired courseId={courseId || ''} courseTitle={course.title} />;
   }
 
   const selectedSubtopic = course.subtopics.find((st: any) => st.id === selectedSubtopicId);
   const currentIndex = course.subtopics.findIndex((st: any) => st.id === selectedSubtopicId);
-  const isCompleted = !isTemporary && progress.some(p => p.subtopic_id === selectedSubtopicId);
+  const isCompleted = !isTemporary && user && progress.some(p => p.subtopic_id === selectedSubtopicId);
 
   const handleNext = () => {
     if (user && !isTemporary) {
@@ -178,8 +178,8 @@ const CoursePage = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-white">
       <ResizablePanelGroup direction="horizontal" className="min-h-screen">
-        {/* Left Panel - Course Names */}
-        {!isTemporary && (
+        {/* Left Panel - Course Names (only show for logged-in users with saved courses) */}
+        {!isTemporary && user && (
           <>
             <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
               <AppSidebar 
@@ -194,7 +194,7 @@ const CoursePage = () => {
         )}
         
         {/* Middle Panel - Subtopics */}
-        <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+        <ResizablePanel defaultSize={isTemporary ? 30 : 25} minSize={20} maxSize={35}>
           <SubtopicSidebar
             course={course}
             selectedSubtopicId={selectedSubtopicId}
@@ -206,7 +206,7 @@ const CoursePage = () => {
         <ResizableHandle withHandle />
         
         {/* Right Panel - Content */}
-        <ResizablePanel defaultSize={55} minSize={40}>
+        <ResizablePanel defaultSize={isTemporary ? 70 : 55} minSize={40}>
           <div className="h-full flex flex-col">
             {/* Header */}
             <div className="p-4 border-b bg-white">
